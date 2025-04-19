@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { loginAdmin } from "@/services/api";
+import { useToast } from "@/components/ui/use-toast";
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({
@@ -12,26 +14,31 @@ const AdminLogin = () => {
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCredentials(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     
-    // In a real app, this would validate against a backend
-    // Mocking a successful login for demonstration
-    if (credentials.username === "admin" && credentials.password === "password") {
-      // Store authentication token/state
-      localStorage.setItem("isLoggedIn", "true");
-      
-      // Redirect to admin dashboard
-      navigate("/admin/dashboard");
-    } else {
-      setError("Invalid username or password. Try 'admin' and 'password'.");
+    try {
+      const response = await loginAdmin(credentials.username, credentials.password);
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: "Logged in successfully",
+        });
+        localStorage.setItem("isLoggedIn", "true");
+        navigate("/admin/dashboard");
+      } else {
+        setError(response.message || "Invalid credentials");
+      }
+    } catch (err) {
+      setError("Failed to connect to server. Please try again.");
     }
   };
 
