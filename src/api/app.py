@@ -6,18 +6,20 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'step_up_dance_secret_key'  # Change this to a proper secret key in production
-CORS(app)  # Enable CORS for all routes
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'step_up_dance_secret_key')  # Improved secret key handling
+CORS(app)
 
-# Database connection function
+# Database connection configuration
+DB_CONFIG = {
+    'host': os.environ.get('DB_HOST', 'localhost'),
+    'user': os.environ.get('DB_USER', 'root'),
+    'password': os.environ.get('DB_PASSWORD', ''),
+    'database': os.environ.get('DB_NAME', 'StepUp')
+}
+
 def get_db_connection():
     try:
-        connection = mysql.connector.connect(
-            host='localhost',
-            user='root',  # Change this to your MySQL username
-            password='',  # Change this to your MySQL password
-            database='step_up_db'  # Database name from StepUP_DB.sql
-        )
+        connection = mysql.connector.connect(**DB_CONFIG)
         return connection
     except mysql.connector.Error as err:
         print(f"Error connecting to MySQL: {err}")
