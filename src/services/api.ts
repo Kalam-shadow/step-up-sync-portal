@@ -20,7 +20,10 @@ export const getTrainers = async () => {
 
 export const getBatches = async () => {
   const response = await fetch(`${API_BASE_URL}/batches`);
-  return response.json();
+  const data = await response.json();
+  
+  // Ensure we're returning an array even if the API returns an object
+  return Array.isArray(data) ? data : [];
 };
 
 export const getStudents = async () => {
@@ -46,4 +49,3 @@ export const registerStudent = async (studentData: {
   });
   return response.json();
 };
-

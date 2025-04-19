@@ -8,7 +8,7 @@ batches_bp = Blueprint('batches', __name__)
 def get_batches():
     conn = get_db_connection()
     if not conn:
-        return jsonify({'error': 'Database connection failed'}), 500
+        return jsonify([]), 500
     
     try:
         cursor = conn.cursor(dictionary=True)
@@ -16,8 +16,9 @@ def get_batches():
         batches = cursor.fetchall()
         cursor.close()
         conn.close()
-        return jsonify(batches)
+        # Always return a list, even if empty
+        return jsonify(batches if batches else [])
     except Exception as e:
         conn.close()
-        return jsonify({'error': str(e)}), 500
-
+        # Return empty array in case of error
+        return jsonify([]), 500
