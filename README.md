@@ -1,73 +1,105 @@
-# Welcome to your Lovable project
 
-## Project info
+# Step Up Dance Company Web Application
 
-**URL**: https://lovable.dev/projects/ca493007-1b17-4bf9-8c73-94808cd9d23e
+A full-stack web application for Step Up Dance Company with a single-page frontend built with React and a backend API built with Flask. The application allows users to view information about the dance studio, register for classes, and contact the studio. It also includes an admin dashboard for managing students, trainers, course schedules, attendance, and payments.
 
-## How can I edit this code?
+## Project Structure
 
-There are several ways of editing your application.
+- `src/`: Frontend React application
+  - `components/`: UI components
+  - `pages/`: Pages and routes
+  - `api/`: Flask backend API
 
-**Use Lovable**
+## Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ca493007-1b17-4bf9-8c73-94808cd9d23e) and start prompting.
+### Frontend
+- Single page layout with smooth scrolling navigation
+- Responsive design using Tailwind CSS
+- Five main sections:
+  - Intro about Step Up Dance Company
+  - Batches section showing batch types
+  - Trainers section showing trainers and specializations
+  - Student registration form
+  - Contact section
+- Admin login and dashboard
 
-Changes made via Lovable will be committed automatically to this repo.
+### Admin Dashboard
+- Student management
+- Trainer management
+- Course scheduling
+- Attendance tracking
+- Payment handling
 
-**Use your preferred IDE**
+### Backend API
+- Flask REST API with MySQL database
+- Authentication for admin access
+- Database operations for all entities
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Setup Instructions
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
+- Node.js and npm
+- Python 3.8+ and pip
+- MySQL database server
 
-Follow these steps:
+### Frontend Setup
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Start the development server:
+   ```
+   npm run dev
+   ```
+4. The application will be available at http://localhost:8080
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Backend Setup
 
-# Step 3: Install the necessary dependencies.
-npm i
+1. Navigate to the `src/api` directory
+2. Create a virtual environment:
+   ```
+   python -m venv venv
+   ```
+3. Activate the virtual environment:
+   - Windows:
+     ```
+     venv\Scripts\activate
+     ```
+   - Linux/Mac:
+     ```
+     source venv/bin/activate
+     ```
+4. Install dependencies:
+   ```
+   pip install flask flask-cors mysql-connector-python
+   ```
+5. Set up the database:
+   - Create a MySQL database named `step_up_db`
+   - Import the `src/api/sample_db.sql` script to create tables and sample data
+   - Alternatively, import your own `StepUP_DB.sql` file
+6. Configure database connection:
+   - Update connection details in `src/api/app.py` if needed
+7. Run the Flask server:
+   ```
+   python app.py
+   ```
+8. The API will be available at http://localhost:5000
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## Admin Dashboard Access
 
-**Edit a file directly in GitHub**
+For demo purposes, use these credentials:
+- Username: admin
+- Password: password
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Next Steps
 
-**Use GitHub Codespaces**
+1. Connect the frontend to the Flask backend API
+2. Add validation to forms
+3. Implement authentication with sessions/tokens
+4. Add error handling and loading states
+5. Deploy to production server
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/ca493007-1b17-4bf9-8c73-94808cd9d23e) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## License
+MIT
