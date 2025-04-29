@@ -1,4 +1,3 @@
-
 from flask import Flask
 from flask_cors import CORS
 import os
@@ -12,7 +11,9 @@ from routes.payments import payments_bp
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'step_up_dance_secret_key')
-CORS(app)
+
+# Update CORS configuration to allow credentials
+CORS(app, supports_credentials=True, origins=["http://localhost:8080"])
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
