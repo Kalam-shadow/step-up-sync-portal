@@ -114,9 +114,9 @@ const PaymentsPage = () => {
   });
 
   // Calculate stats
-  const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const paidPayments = payments.filter(p => p.status === "Paid").reduce((sum, payment) => sum + payment.amount, 0);
-  const pendingPayments = payments.filter(p => p.status === "Pending").reduce((sum, payment) => sum + payment.amount, 0);
+  const totalPayments = payments.reduce((sum, payment) => sum+ +payment.amount, 0);
+  const paidPayments = payments.filter(p => p.status === "Paid").reduce((sum, payment) => sum + +payment.amount, 0);
+  const pendingPayments = payments.filter(p => p.status === "Pending").reduce((sum, payment) => sum + +payment.amount, 0);
 
   return (
     <div className="space-y-6 p-6">
@@ -265,7 +265,7 @@ const PaymentsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalPayments}</div>
+            <div className="text-2xl font-bold">₹{totalPayments}</div>
           </CardContent>
         </Card>
         <Card>
@@ -275,7 +275,7 @@ const PaymentsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${paidPayments}</div>
+            <div className="text-2xl font-bold text-green-600">₹{paidPayments}</div>
           </CardContent>
         </Card>
         <Card>
@@ -285,7 +285,7 @@ const PaymentsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-500">${pendingPayments}</div>
+            <div className="text-2xl font-bold text-amber-500">₹{pendingPayments}</div>
           </CardContent>
         </Card>
       </div>
@@ -313,7 +313,7 @@ const PaymentsPage = () => {
               payments.map((payment) => (
                 <TableRow key={payment.id}>
                   <TableCell className="font-medium">{payment.studentName}</TableCell>
-                  <TableCell>${payment.amount}</TableCell>
+                  <TableCell>₹{payment.amount}</TableCell>
                   <TableCell>{payment.paymentDate}</TableCell>
                   <TableCell>{payment.description || "-"}</TableCell>
                   <TableCell>

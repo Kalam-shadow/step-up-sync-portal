@@ -34,7 +34,7 @@ const DashboardHome = () => {
   
   const totalRevenue = payments
     .filter(payment => payment.status === "Paid")
-    .reduce((total, payment) => total + payment.amount, 0);
+    .reduce((total, payment) => total + +payment.amount, 0);
 
   // Prepare data for charts
   const batchData = batches.map(batch => {
@@ -94,7 +94,7 @@ const DashboardHome = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${totalRevenue}</div>
+            <div className="text-2xl font-bold text-green-600">₹ {totalRevenue}</div>
           </CardContent>
         </Card>
       </div>

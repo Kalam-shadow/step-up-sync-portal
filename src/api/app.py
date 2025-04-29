@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'step_up_dance_secret_key')
 
 # Update CORS configuration to allow credentials
-CORS(app, supports_credentials=True, origins=["http://localhost:8080"])
+CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://localhost:8080"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
