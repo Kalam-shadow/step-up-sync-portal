@@ -1,6 +1,17 @@
+
 import { Attendance, Batch, Payment, Student, Trainer } from "@/types";
 
 const API_BASE_URL = 'http://localhost:5000/api';
+
+// Error handling helper
+const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.error || `Error: ${response.status}`;
+    throw new Error(errorMessage);
+  }
+  return response.json();
+};
 
 // Authentication
 export const loginAdmin = async (username: string, password: string) => {
@@ -12,13 +23,13 @@ export const loginAdmin = async (username: string, password: string) => {
     body: JSON.stringify({ username, password }),
     credentials: 'include',
   });
-  return response.json();
+  return handleResponse(response);
 };
 
 // Trainers
 export const getTrainers = async (): Promise<Trainer[]> => {
   const response = await fetch(`${API_BASE_URL}/trainers`, {
-    credentials: 'include', // Include cookies for authentication
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -47,31 +58,44 @@ export const registerTrainer = async (trainerData: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(trainerData),
+    credentials: 'include',
   });
-  return response.json();
+  return handleResponse(response);
 };
 
 // Batches
 export const getBatches = async (): Promise<Batch[]> => {
-  const response = await fetch(`${API_BASE_URL}/batches`, {
-    credentials: 'include',
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/batches`, {
+      credentials: 'include',
+    });
 
-  if (!response.ok) {
-    throw new Error(`Error fetching batches: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching batches: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Ensure we always have an array
+    if (!Array.isArray(data)) {
+      console.error("API did not return an array for batches", data);
+      return [];
+    }
+    
+    return data.map((batch: any) => ({
+      id: batch.BatchID,
+      name: batch.BatchName,
+      danceStyle: batch.DanceStyle || "",
+      ageGroup: batch.AgeGroup || "",
+      schedule: batch.Schedule || "",
+      duration: batch.Duration || 60,
+      level: batch.Level || "Beginner",
+      fee: batch.Fee || 0,
+    }));
+  } catch (error) {
+    console.error("Error in getBatches:", error);
+    return [];
   }
-
-  const data = await response.json();
-  return data.map((batch: any) => ({
-    id: batch.BatchID,
-    name: batch.BatchName,
-    danceStyle: batch.DanceStyle,
-    ageGroup: batch.AgeGroup,
-    schedule: batch.Schedule,
-    duration: batch.Duration,
-    level: batch.Level,
-    fee: batch.Fee,
-  }));
 };
 
 export const createBatch = async (batchData: {
@@ -85,30 +109,42 @@ export const createBatch = async (batchData: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(batchData),
+    credentials: 'include',
   });
-  return response.json();
+  return handleResponse(response);
 };
 
 // Students
 export const getStudents = async (): Promise<Student[]> => {
-  const response = await fetch(`${API_BASE_URL}/students`, {
-    credentials: 'include', // Include cookies for authentication
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/students`, {
+      credentials: 'include',
+    });
 
-  if (!response.ok) {
-    throw new Error(`Error fetching students: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching students: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!Array.isArray(data)) {
+      console.error("API did not return an array for students", data);
+      return [];
+    }
+    
+    return data.map((student: any) => ({
+      id: student.StudentID,
+      name: student.Name,
+      age: student.Age,
+      contactInfo: student.ContactInfo,
+      joiningDate: student.JoiningDate,
+      emergencyContact: student.EmergencyContact,
+      batchId: student.BatchID,
+    }));
+  } catch (error) {
+    console.error("Error in getStudents:", error);
+    return [];
   }
-
-  const data = await response.json();
-  return data.map((student: any) => ({
-    id: student.StudentID,
-    name: student.Name,
-    age: student.Age,
-    contactInfo: student.ContactInfo,
-    joiningDate: student.JoiningDate,
-    emergencyContact: student.EmergencyContact,
-    batchId: student.BatchID,
-  }));
 };
 
 export const registerStudent = async (studentData: {
@@ -124,38 +160,52 @@ export const registerStudent = async (studentData: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(studentData),
+    credentials: 'include',
   });
-  return response.json();
+  return handleResponse(response);
 };
 
 // Attendance
 export const getAttendance = async (batchId: number, date?: string): Promise<Attendance[]> => {
-  if (!batchId) {
-    throw new Error("Batch ID is required to fetch attendance.");
+  try {
+    if (!batchId) {
+      console.warn("Batch ID is required to fetch attendance.");
+      return [];
+    }
+
+    const url = new URL(`${API_BASE_URL}/attendance`);
+    url.searchParams.append("batch_id", batchId.toString());
+    if (date) {
+      url.searchParams.append("date", date);
+    }
+
+    const response = await fetch(url.toString(), {
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error fetching attendance: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!Array.isArray(data)) {
+      console.error("API did not return an array for attendance", data);
+      return [];
+    }
+    
+    return data.map((record: any) => ({
+      id: record.AttendanceID,
+      studentId: record.StudentID,
+      studentName: record.StudentName,
+      batchId: record.BatchID,
+      attendanceDate: record.AttendanceDate,
+      status: record.Status,
+    }));
+  } catch (error) {
+    console.error("Error in getAttendance:", error);
+    return [];
   }
-
-  const url = new URL(`${API_BASE_URL}/attendance`);
-  url.searchParams.append("batch_id", batchId.toString());
-  if (date) {
-    url.searchParams.append("date", date);
-  }
-
-  const response = await fetch(url.toString(), {
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Error fetching attendance: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.map((record: any) => ({
-    id: record.AttendanceID,
-    studentName: record.StudentName,
-    batchId: record.BatchID,
-    attendanceDate: record.AttendanceDate,
-    status: record.Status,
-  }));
 };
 
 export const markAttendance = async (attendanceData: {
@@ -169,29 +219,42 @@ export const markAttendance = async (attendanceData: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(attendanceData),
+    credentials: 'include',
   });
-  return response.json();
+  return handleResponse(response);
 };
 
 // Payments
 export const getPayments = async (): Promise<Payment[]> => {
-  const response = await fetch(`${API_BASE_URL}/payments`, {
-    credentials: 'include',
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/payments`, {
+      credentials: 'include',
+    });
 
-  if (!response.ok) {
-    throw new Error(`Error fetching payments: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching payments: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!Array.isArray(data)) {
+      console.error("API did not return an array for payments", data);
+      return [];
+    }
+    
+    return data.map((payment: any) => ({
+      id: payment.PaymentID,
+      studentId: payment.StudentID,
+      studentName: payment.StudentName,
+      amount: payment.Amount,
+      paymentDate: payment.PaymentDate,
+      description: payment.Description,
+      status: payment.Status,
+    }));
+  } catch (error) {
+    console.error("Error in getPayments:", error);
+    return [];
   }
-
-  const data = await response.json();
-  return data.map((payment: any) => ({
-    id: payment.PaymentID,
-    studentName: payment.StudentName,
-    amount: payment.Amount,
-    paymentDate: payment.PaymentDate,
-    description: payment.Description,
-    status: payment.Status,
-  }));
 };
 
 export const recordPayment = async (paymentData: {
@@ -205,14 +268,29 @@ export const recordPayment = async (paymentData: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(paymentData),
+    credentials: 'include',
   });
-  return response.json();
+  return handleResponse(response);
 };
 
 // Utility function for DELETE requests
 export const deleteEntity = async (endpoint: string, id: number) => {
   const response = await fetch(`${API_BASE_URL}/${endpoint}/${id}`, {
     method: 'DELETE',
+    credentials: 'include',
   });
-  return response.json();
+  return handleResponse(response);
+};
+
+// Utility function for UPDATE requests
+export const updateEntity = async (endpoint: string, id: number, data: any) => {
+  const response = await fetch(`${API_BASE_URL}/${endpoint}/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+    credentials: 'include',
+  });
+  return handleResponse(response);
 };

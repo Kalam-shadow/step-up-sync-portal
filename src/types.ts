@@ -1,3 +1,4 @@
+
 export interface Student {
   id: number;
   name: string;
@@ -30,6 +31,7 @@ export interface Batch {
 
 export interface Attendance {
   id: number;
+  studentId: number;
   studentName: string;
   batchId: number;
   attendanceDate: string;
@@ -38,6 +40,7 @@ export interface Attendance {
 
 export interface Payment {
   id: number;
+  studentId: number;
   studentName: string;
   amount: number;
   paymentDate: string;
