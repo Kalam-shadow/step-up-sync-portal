@@ -1,4 +1,3 @@
-
 import { Attendance, Batch, Payment, Student, Trainer } from "@/types";
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -174,6 +173,37 @@ export const registerStudent = async (studentData: {
     credentials: 'include',
   });
   return handleResponse(response);
+};
+
+export const updateStudent = async (studentId: number, studentData: {
+  name: string;
+  age: number;
+  contact_info?: string;
+  emergency_contact?: string;
+  batch_id: number;
+}): Promise<void> => {
+  const apiData = {
+    name: studentData.name,
+    age: studentData.age,
+    contact_info: studentData.contact_info || "",
+    emergency_contact: studentData.emergency_contact || "",
+    batch_id: studentData.batch_id,
+  };
+
+  const response = await fetch(`${API_BASE_URL}/students/${studentId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(apiData),
+    credentials: "include", // Include cookies for authentication
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.error || `Error: ${response.status}`;
+    throw new Error(errorMessage);
+  }
 };
 
 // Attendance

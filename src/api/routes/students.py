@@ -1,4 +1,3 @@
-
 from flask import Blueprint, jsonify, request, session
 from utils.db import get_db_connection
 from datetime import datetime
@@ -27,7 +26,7 @@ def get_students():
             conn.close()
         return jsonify([]), 500
 
-@students_bp.route('/', methods=['POST'])
+@students_bp.route('', methods=['POST'])
 def register_student():
     if 'logged_in' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -92,6 +91,9 @@ def update_student(student_id):
             data.get('batch_id'),
             student_id
         )
+        
+        print(f"Executing query: {query} with values: {values}")  # Debugging log
+        
         cursor.execute(query, values)
         conn.commit()
         
