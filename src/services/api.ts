@@ -150,16 +150,27 @@ export const getStudents = async (): Promise<Student[]> => {
 export const registerStudent = async (studentData: {
   name: string;
   age: number;
-  contact_info: string;
-  emergency_contact: string;
+  contact_info?: string;
+  contactInfo?: string;
+  emergency_contact?: string;
+  emergencyContact?: string;
   batch_id: number;
 }) => {
+  // Transform the data to ensure correct field names for the API
+  const apiData = {
+    name: studentData.name,
+    age: studentData.age,
+    contact_info: studentData.contact_info || studentData.contactInfo || "",
+    emergency_contact: studentData.emergency_contact || studentData.emergencyContact || "",
+    batch_id: studentData.batch_id
+  };
+
   const response = await fetch(`${API_BASE_URL}/students`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(studentData),
+    body: JSON.stringify(apiData),
     credentials: 'include',
   });
   return handleResponse(response);

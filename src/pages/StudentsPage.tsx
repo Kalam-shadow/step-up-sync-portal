@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Student } from "@/types";
@@ -84,8 +83,8 @@ const StudentsPage = () => {
       return registerStudent({
         name: data.name,
         age: Number(data.age),
-        contact_info: data.contactInfo,
-        emergency_contact: data.emergencyContact,
+        contactInfo: data.contactInfo,
+        emergencyContact: data.emergencyContact,
         batch_id: Number(data.batchId)
       });
     },
