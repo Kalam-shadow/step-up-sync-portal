@@ -53,16 +53,16 @@ const BatchesSection = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {batches?.map((batch) => (
-            <Card key={batch.BatchID} className="hover:shadow-lg transition-shadow">
+            <Card key={batch.id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl">{batch.Name}</CardTitle>
-                <CardDescription className="text-gray-500">{batch.Level}</CardDescription>
+                <CardTitle className="text-xl">{batch.name}</CardTitle>
+                <CardDescription className="text-gray-500">{batch.level}</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-700 mb-4">{batch.Description}</p>
+                <p className="text-sm text-gray-700 mb-4">{batch.danceStyle}</p>
                 <div className="text-sm font-medium">
-                  <p><span className="text-purple-600">Schedule:</span> {batch.Schedule}</p>
-                  <p><span className="text-purple-600">Trainer:</span> {batch.TrainerName}</p>
+                  <p><span className="text-purple-600">Schedule:</span> {batch.schedule}</p>
+                  <p><span className="text-purple-600">Age Group:</span> {batch.ageGroup}</p>
                 </div>
               </CardContent>
             </Card>
