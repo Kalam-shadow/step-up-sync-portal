@@ -28,13 +28,8 @@ export const registerTrainer = async (trainerData:{
   specialization: string;
   contact_info: string;
   bio: string;
-  joining_Date: any;
+  joining_Date: string;
 }): Promise<void> => {
-  const formattedJoiningDate =
-    trainerData.joining_Date instanceof Date
-      ? trainerData.joining_Date.toISOString().split("T")[0] // Convert to YYYY-MM-DD
-      : trainerData.joining_Date;
-
   const response = await fetch(`${API_BASE_URL}/trainers`, {
     method: "POST",
     headers: {
@@ -43,7 +38,7 @@ export const registerTrainer = async (trainerData:{
     body: JSON.stringify({
       name: trainerData.name,
       specialization: trainerData.specialization,
-      joining_date: formattedJoiningDate, // Use the formatted date
+      joining_date: trainerData.joining_Date,
       contact_info: trainerData.contact_info,
       bio: trainerData.bio,
     }),
@@ -72,7 +67,7 @@ export const updateTrainer = async (trainerId: number, trainerData: {
     body: JSON.stringify({
       name: trainerData.name,
       specialization: trainerData.specialization,
-      joining_date: trainerData.joining_Date, // Ensure the correct field name is used
+      joining_date: trainerData.joining_Date,
       contact_info: trainerData.contact_info,
       bio: trainerData.bio,
     }),

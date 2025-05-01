@@ -6,4 +6,5 @@ export * from './batches';
 export * from './students';
 export * from './attendance';
 export * from './payments';
+export * from './events';
 export * from './base';

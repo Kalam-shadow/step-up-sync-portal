@@ -63,3 +63,38 @@ export interface TrainerFormData {
   bio: string;
   joiningDate: string;
 }
+
+// New interfaces for Event Management
+export interface Event {
+  id: number;
+  name: string;
+  date: string;
+  location: string;
+  description: string;
+  clientName: string;
+  clientContact: string;
+  status: string; // "Upcoming", "Completed", "Cancelled"
+  fee: number;
+  eventType: string; // "Wedding", "Corporate", "Competition", etc.
+}
+
+export interface EventStaff {
+  id: number;
+  eventId: number;
+  trainerId: number;
+  trainerName: string;
+  role: string; // "Lead", "Support", "Choreographer", etc.
+  confirmed: boolean;
+}
+
+export interface EventFormData {
+  name: string;
+  date: string;
+  location: string;
+  description: string;
+  clientName: string;
+  clientContact: string;
+  status: string;
+  fee: number;
+  eventType: string;
+}
