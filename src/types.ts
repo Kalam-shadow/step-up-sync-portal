@@ -40,6 +40,11 @@ export interface Attendance {
   status: string; // "Present", "Absent", "Late"
 }
 
+export interface BulkAttendanceEntry {
+  studentId: number;
+  status: string;
+}
+
 export interface Payment {
   id: number;
   studentId: number;
