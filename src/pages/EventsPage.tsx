@@ -1,606 +1,574 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Event, EventStaff, EventFormData, Trainer } from "@/types";
-import { getEvents, createEvent, updateEvent, deleteEvent, getEventStaff, assignStaffToEvent, removeStaffFromEvent, getTrainers } from "@/services/api";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
+import { 
+  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle 
+} from "@/components/ui/card";
+import { 
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger 
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+import { 
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+} from "@/components/ui/table";
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Edit, Calendar, User, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { Event, EventFormData, Trainer } from "@/types";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { 
+  createEvent, deleteEvent, getEvents, updateEvent, 
+  assignStaffToEvent, getEventStaff, removeStaffFromEvent 
+} from "@/services/api/events";
+import { getTrainers } from "@/services/api/trainers";
 
 const EventsPage = () => {
-  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [staffDialogOpen, setStaffDialogOpen] = useState(false);
+  const [currentEventForStaff, setCurrentEventForStaff] = useState<number | null>(null);
+  const [selectedTrainer, setSelectedTrainer] = useState<number | null>(null);
+  const [staffRole, setStaffRole] = useState<string>("Performer");
+  
+  // Initialize form state
+  const emptyFormData: EventFormData = {
+    name: "",
+    date: "",
+    location: "",
+    description: "",
+    clientName: "",
+    clientContact: "",
+    status: "Upcoming",
+    fee: 0,
+    eventType: "Wedding"
+  };
+  
+  const [formData, setFormData] = useState<EventFormData>(emptyFormData);
+  
   const queryClient = useQueryClient();
-  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
-  const [isStaffDialogOpen, setIsStaffDialogOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("Performer");
-  const [selectedTrainerId, setSelectedTrainerId] = useState<number | null>(null);
-
-  const form = useForm<EventFormData>({
-    defaultValues: {
-      name: "",
-      date: "",
-      location: "",
-      description: "",
-      clientName: "",
-      clientContact: "",
-      status: "Upcoming",
-      fee: 0,
-      eventType: "Performance",
-    },
+  
+  // Fetch events data
+  const { data: events = [], isLoading: eventsLoading } = useQuery({
+    queryKey: ['events'],
+    queryFn: getEvents
   });
-
-  // Reset form when dialog closes
-  const handleEventDialogOpenChange = (open: boolean) => {
-    if (!open) {
-      form.reset();
-      setEditingEvent(null);
-    }
-    setIsEventDialogOpen(open);
-  };
-
-  // Prefill form when editing
-  const handleEditEvent = (event: Event) => {
-    setEditingEvent(event);
-    form.setValue("name", event.name);
-    form.setValue("date", event.date);
-    form.setValue("location", event.location);
-    form.setValue("description", event.description);
-    form.setValue("clientName", event.clientName);
-    form.setValue("clientContact", event.clientContact);
-    form.setValue("status", event.status);
-    form.setValue("fee", event.fee);
-    form.setValue("eventType", event.eventType);
-    setIsEventDialogOpen(true);
-  };
-
-  // Open staff dialog
-  const handleManageStaff = (event: Event) => {
-    setSelectedEvent(event);
-    setIsStaffDialogOpen(true);
-  };
-
-  // Get all events
-  const {
-    data: events = [],
-    isLoading: eventsLoading,
-    isError: eventsError,
-  } = useQuery({
-    queryKey: ["events"],
-    queryFn: getEvents,
+  
+  // Fetch trainers for staff assignment
+  const { data: trainers = [] } = useQuery({
+    queryKey: ['trainers'],
+    queryFn: getTrainers
   });
-
-  // Get all trainers for staff assignment
-  const {
-    data: trainers = [],
-    isLoading: trainersLoading,
-  } = useQuery({
-    queryKey: ["trainers"],
-    queryFn: getTrainers,
+  
+  // Fetch staff for selected event
+  const { data: eventStaff = [], refetch: refetchStaff } = useQuery({
+    queryKey: ['eventStaff', currentEventForStaff],
+    queryFn: () => currentEventForStaff ? getEventStaff(currentEventForStaff) : Promise.resolve([]),
+    enabled: !!currentEventForStaff
   });
-
-  // Get staff for selected event
-  const {
-    data: eventStaff = [],
-    isLoading: staffLoading,
-    refetch: refetchStaff,
-  } = useQuery({
-    queryKey: ["eventStaff", selectedEvent?.id],
-    queryFn: () => selectedEvent ? getEventStaff(selectedEvent.id) : Promise.resolve([]),
-    enabled: !!selectedEvent,
-  });
-
-  // Add/update event mutation
-  const eventMutation = useMutation({
-    mutationFn: (data: EventFormData) => {
-      if (editingEvent) {
-        return updateEvent(editingEvent.id, data);
-      } else {
-        return createEvent(data);
-      }
-    },
+  
+  // Create event mutation
+  const createEventMutation = useMutation({
+    mutationFn: createEvent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      toast({
-        title: `Event ${editingEvent ? "updated" : "created"} successfully`,
-        variant: "default",
-      });
-      setIsEventDialogOpen(false);
-      form.reset();
-      setEditingEvent(null);
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success("Event created successfully");
+      setIsDialogOpen(false);
+      resetForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to ${editingEvent ? "update" : "create"} event: ${error.message}`,
-        variant: "destructive",
-      });
-    },
+      toast.error(`Failed to create event: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   });
-
+  
+  // Update event mutation
+  const updateEventMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: EventFormData }) => 
+      updateEvent(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success("Event updated successfully");
+      setIsDialogOpen(false);
+      setCurrentEvent(null);
+      resetForm();
+    },
+    onError: (error) => {
+      toast.error(`Failed to update event: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  });
+  
   // Delete event mutation
   const deleteEventMutation = useMutation({
-    mutationFn: (id: number) => deleteEvent(id),
+    mutationFn: deleteEvent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      toast({
-        title: "Event deleted successfully",
-        variant: "default",
-      });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success("Event deleted successfully");
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to delete event: ${error.message}`,
-        variant: "destructive",
-      });
-    },
+      toast.error(`Failed to delete event: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   });
-
+  
   // Assign staff mutation
   const assignStaffMutation = useMutation({
     mutationFn: ({ eventId, trainerId, role }: { eventId: number; trainerId: number; role: string }) => 
       assignStaffToEvent(eventId, trainerId, role),
     onSuccess: () => {
-      if (selectedEvent) {
-        queryClient.invalidateQueries({ queryKey: ["eventStaff", selectedEvent.id] });
-        toast({
-          title: "Staff assigned successfully",
-          variant: "default",
-        });
-        setSelectedTrainerId(null);
+      if (currentEventForStaff) {
+        refetchStaff();
+        toast.success("Staff assigned to event");
+        setSelectedTrainer(null);
+        setStaffRole("Performer");
       }
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to assign staff: ${error.message}`,
-        variant: "destructive",
-      });
-    },
+      toast.error(`Failed to assign staff: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   });
-
+  
   // Remove staff mutation
   const removeStaffMutation = useMutation({
     mutationFn: ({ eventId, staffId }: { eventId: number; staffId: number }) => 
       removeStaffFromEvent(eventId, staffId),
     onSuccess: () => {
-      if (selectedEvent) {
-        queryClient.invalidateQueries({ queryKey: ["eventStaff", selectedEvent.id] });
-        toast({
-          title: "Staff removed successfully",
-          variant: "default",
-        });
+      if (currentEventForStaff) {
+        refetchStaff();
+        toast.success("Staff removed from event");
       }
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to remove staff: ${error.message}`,
-        variant: "destructive",
-      });
-    },
+      toast.error(`Failed to remove staff: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   });
-
-  const onSubmit = form.handleSubmit((data) => {
-    eventMutation.mutate(data);
-  });
-
+  
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (currentEvent) {
+      updateEventMutation.mutate({ id: currentEvent.id, data: formData });
+    } else {
+      createEventMutation.mutate(formData);
+    }
+  };
+  
+  // Handle form input change
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === 'fee' ? parseFloat(value) || 0 : value
+    }));
+  };
+  
+  // Reset form to default values
+  const resetForm = () => {
+    setFormData(emptyFormData);
+  };
+  
+  // Open dialog for editing an event
+  const openEditDialog = (event: Event) => {
+    setCurrentEvent(event);
+    setFormData({
+      name: event.name,
+      date: event.date,
+      location: event.location,
+      description: event.description,
+      clientName: event.clientName,
+      clientContact: event.clientContact,
+      status: event.status,
+      fee: event.fee,
+      eventType: event.eventType
+    });
+    setIsDialogOpen(true);
+  };
+  
+  // Open dialog for creating a new event
+  const openNewDialog = () => {
+    setCurrentEvent(null);
+    resetForm();
+    setIsDialogOpen(true);
+  };
+  
+  // Open staff dialog for an event
+  const openStaffDialog = (eventId: number) => {
+    setCurrentEventForStaff(eventId);
+    setStaffDialogOpen(true);
+  };
+  
+  // Assign staff to event
   const handleAssignStaff = () => {
-    if (selectedEvent && selectedTrainerId) {
-      assignStaffMutation.mutate({
-        eventId: selectedEvent.id,
-        trainerId: selectedTrainerId,
-        role: selectedRole,
+    if (currentEventForStaff && selectedTrainer) {
+      assignStaffMutation.mutate({ 
+        eventId: currentEventForStaff, 
+        trainerId: selectedTrainer, 
+        role: staffRole 
       });
     }
   };
-
-  // Helper function to get status color
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'upcoming':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  
+  // Remove staff from event
+  const handleRemoveStaff = (staffId: number) => {
+    if (currentEventForStaff) {
+      removeStaffMutation.mutate({
+        eventId: currentEventForStaff,
+        staffId
+      });
     }
   };
-
-  if (eventsLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
-  if (eventsError) return <div className="p-8 text-red-500">Error loading events!</div>;
-
+  
+  // Get status badge color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Upcoming":
+        return "bg-blue-500";
+      case "Completed":
+        return "bg-green-500";
+      case "Cancelled":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+  
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Event Management</h2>
-        <Dialog open={isEventDialogOpen} onOpenChange={handleEventDialogOpenChange}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus size={16} />
-              Add Event
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editingEvent ? "Edit" : "Add"} Event</DialogTitle>
-              <DialogDescription>
-                {editingEvent ? "Update event details" : "Enter event information below"}
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={onSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Event Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Annual Dance Show" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <FormControl>
-                          <Input placeholder="City Theater" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="eventType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Event Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select event type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Performance">Performance</SelectItem>
-                            <SelectItem value="Wedding">Wedding</SelectItem>
-                            <SelectItem value="Corporate">Corporate Event</SelectItem>
-                            <SelectItem value="Competition">Competition</SelectItem>
-                            <SelectItem value="Workshop">Workshop</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Event details and requirements" 
-                          className="min-h-[100px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="clientName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Smith" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="clientContact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client Contact</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Email or Phone" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Upcoming">Upcoming</SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
-                            <SelectItem value="Cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="fee"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fee</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0.00" 
-                            {...field}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              field.onChange(value === '' ? 0 : parseFloat(value));
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <DialogFooter>
-                  <Button type="submit" disabled={eventMutation.isPending}>
-                    {eventMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {editingEvent ? "Update" : "Create"} Event
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Tabs defaultValue="table" className="w-full">
-        <TabsList className="grid w-[400px] grid-cols-2">
-          <TabsTrigger value="table">Table View</TabsTrigger>
-          <TabsTrigger value="cards">Card View</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="table" className="mt-6">
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {events.length === 0 ? (
+    <DashboardLayout title="Event Management">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Events</h2>
+          <Button onClick={openNewDialog}>Add New Event</Button>
+        </div>
+        
+        <Tabs defaultValue="table" className="w-full">
+          <TabsList>
+            <TabsTrigger value="table">Table View</TabsTrigger>
+            <TabsTrigger value="cards">Card View</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="table">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center">No events found</TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Fee</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
-                  events.map((event) => (
+                </TableHeader>
+                <TableBody>
+                  {events.map((event) => (
                     <TableRow key={event.id}>
                       <TableCell className="font-medium">{event.name}</TableCell>
-                      <TableCell>{event.eventType}</TableCell>
-                      <TableCell>{event.date}</TableCell>
+                      <TableCell>{new Date(event.date).toLocaleDateString()}</TableCell>
                       <TableCell>{event.location}</TableCell>
+                      <TableCell>{event.clientName}</TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(event.status)}>
                           {event.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleManageStaff(event)}
-                          >
-                            <Users size={16} />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleEditEvent(event)}
-                          >
-                            <Edit size={16} />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-red-500"
-                            onClick={() => deleteEventMutation.mutate(event.id)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
+                      <TableCell>₹{event.fee.toLocaleString()}</TableCell>
+                      <TableCell>{event.eventType}</TableCell>
+                      <TableCell className="space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => openEditDialog(event)}>
+                          Edit
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => openStaffDialog(event.id)}>
+                          Staff
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to delete "${event.name}"?`)) {
+                              deleteEventMutation.mutate(event.id);
+                            }
+                          }}
+                        >
+                          Delete
+                        </Button>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="cards" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.length === 0 ? (
-              <div className="text-center col-span-full py-8">No events found</div>
-            ) : (
-              events.map((event) => (
-                <Card key={event.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex justify-between items-center">
-                      <span>{event.name}</span>
+                  ))}
+                  
+                  {events.length === 0 && !eventsLoading && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        No events found. Click "Add New Event" to create one.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  
+                  {eventsLoading && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        Loading events...
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="cards">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {events.map((event) => (
+                <Card key={event.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{event.name}</CardTitle>
+                        <CardDescription>{new Date(event.date).toLocaleDateString()} at {event.location}</CardDescription>
+                      </div>
                       <Badge className={getStatusColor(event.status)}>
                         {event.status}
                       </Badge>
-                    </CardTitle>
-                    <CardDescription>{event.eventType}</CardDescription>
+                    </div>
                   </CardHeader>
-                  <CardContent className="pb-2 space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar size={16} className="text-purple-500" />
-                      <span>{event.date}</span>
+                  <CardContent className="space-y-2">
+                    <div>
+                      <p className="text-sm font-medium">Client:</p>
+                      <p className="text-sm">{event.clientName}</p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">Location:</span> {event.location}
+                    <div>
+                      <p className="text-sm font-medium">Fee:</p>
+                      <p className="text-sm">₹{event.fee.toLocaleString()}</p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <User size={16} className="text-purple-500" />
-                      <span>{event.clientName || "No client specified"}</span>
+                    <div>
+                      <p className="text-sm font-medium">Type:</p>
+                      <p className="text-sm">{event.eventType}</p>
                     </div>
-                    <p className="text-sm line-clamp-2">{event.description}</p>
+                    <div>
+                      <p className="text-sm font-medium">Description:</p>
+                      <p className="text-sm line-clamp-2">{event.description}</p>
+                    </div>
                   </CardContent>
-                  <CardFooter className="flex justify-between pt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleManageStaff(event)}
-                    >
-                      <Users size={16} className="mr-2" />
-                      Manage Staff
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" size="sm" onClick={() => openEditDialog(event)}>
+                      Edit
                     </Button>
-                    <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleEditEvent(event)}
-                      >
-                        <Edit size={16} />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="text-red-500"
-                        onClick={() => deleteEventMutation.mutate(event.id)}
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </div>
+                    <Button variant="outline" size="sm" onClick={() => openStaffDialog(event.id)}>
+                      Staff
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete "${event.name}"?`)) {
+                          deleteEventMutation.mutate(event.id);
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
                   </CardFooter>
                 </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Staff Management Dialog */}
-      <Dialog open={isStaffDialogOpen} onOpenChange={setIsStaffDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+              ))}
+              
+              {events.length === 0 && !eventsLoading && (
+                <Card className="col-span-full">
+                  <CardContent className="text-center py-8">
+                    <p>No events found. Click "Add New Event" to create one.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+      
+      {/* Event Form Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Manage Event Staff</DialogTitle>
+            <DialogTitle>
+              {currentEvent ? `Edit Event: ${currentEvent.name}` : "Add New Event"}
+            </DialogTitle>
             <DialogDescription>
-              {selectedEvent ? `Assign dancers to "${selectedEvent.name}"` : ''}
+              Fill in the details for the event.
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="flex items-end gap-4">
-              <div className="flex-1">
-                <FormLabel>Trainer</FormLabel>
-                <Select onValueChange={(value) => setSelectedTrainerId(Number(value))}>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Event Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="date">Event Date</Label>
+                <Input
+                  id="date"
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="clientName">Client Name</Label>
+                  <Input
+                    id="clientName"
+                    name="clientName"
+                    value={formData.clientName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="clientContact">Client Contact</Label>
+                  <Input
+                    id="clientContact"
+                    name="clientContact"
+                    value={formData.clientContact}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="fee">Event Fee (₹)</Label>
+                  <Input
+                    id="fee"
+                    name="fee"
+                    type="number"
+                    value={formData.fee}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select 
+                    name="status" 
+                    value={formData.status} 
+                    onValueChange={(value) => {
+                      setFormData((prev) => ({ ...prev, status: value }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Upcoming">Upcoming</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="eventType">Event Type</Label>
+                <Select 
+                  name="eventType" 
+                  value={formData.eventType} 
+                  onValueChange={(value) => {
+                    setFormData((prev) => ({ ...prev, eventType: value }));
+                  }}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select trainer" />
+                    <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {trainers.map((trainer) => (
+                    <SelectItem value="Wedding">Wedding</SelectItem>
+                    <SelectItem value="Corporate">Corporate</SelectItem>
+                    <SelectItem value="Birthday">Birthday</SelectItem>
+                    <SelectItem value="Competition">Competition</SelectItem>
+                    <SelectItem value="Festival">Festival</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={() => setIsDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                {currentEvent ? "Update Event" : "Create Event"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Staff Assignment Dialog */}
+      <Dialog open={staffDialogOpen} onOpenChange={setStaffDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Event Staff</DialogTitle>
+            <DialogDescription>
+              Assign trainers to this event
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="trainer">Select Trainer</Label>
+                <Select 
+                  value={selectedTrainer?.toString() || ""} 
+                  onValueChange={(value) => setSelectedTrainer(parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a trainer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {trainers.map((trainer: Trainer) => (
                       <SelectItem key={trainer.id} value={trainer.id.toString()}>
                         {trainer.name} - {trainer.specialization}
                       </SelectItem>
@@ -608,90 +576,70 @@ const EventsPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="w-1/3">
-                <FormLabel>Role</FormLabel>
-                <Select defaultValue={selectedRole} onValueChange={setSelectedRole}>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="role">Role</Label>
+                <Select value={staffRole} onValueChange={setStaffRole}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Performer">Performer</SelectItem>
                     <SelectItem value="Lead">Lead</SelectItem>
+                    <SelectItem value="Performer">Performer</SelectItem>
                     <SelectItem value="Choreographer">Choreographer</SelectItem>
                     <SelectItem value="Support">Support</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
+              
               <Button 
-                onClick={handleAssignStaff}
-                disabled={!selectedTrainerId || assignStaffMutation.isPending}
+                onClick={handleAssignStaff} 
+                disabled={!selectedTrainer || !staffRole}
               >
-                {assignStaffMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Assign
+                Assign to Event
               </Button>
             </div>
-
+            
             <div className="border rounded-md">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>Specialization</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {staffLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4">
-                        <Loader2 className="mx-auto animate-spin" />
+                  {eventStaff.map((staff) => (
+                    <TableRow key={staff.id}>
+                      <TableCell>{staff.trainerName}</TableCell>
+                      <TableCell>{staff.role}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleRemoveStaff(staff.id)}
+                        >
+                          Remove
+                        </Button>
                       </TableCell>
                     </TableRow>
-                  ) : eventStaff.length === 0 ? (
+                  ))}
+                  
+                  {eventStaff.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4">No staff assigned to this event</TableCell>
+                      <TableCell colSpan={3} className="text-center py-4">
+                        No staff assigned yet
+                      </TableCell>
                     </TableRow>
-                  ) : (
-                    eventStaff.map((staff) => {
-                      const trainer = trainers.find(t => t.id === staff.trainerId);
-                      return (
-                        <TableRow key={staff.id}>
-                          <TableCell>{staff.trainerName}</TableCell>
-                          <TableCell>{staff.role}</TableCell>
-                          <TableCell>{trainer?.specialization || "Unknown"}</TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              className="text-red-500"
-                              onClick={() => removeStaffMutation.mutate({ 
-                                eventId: staff.eventId, 
-                                staffId: staff.id 
-                              })}
-                            >
-                              <Trash2 size={16} />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
                   )}
                 </TableBody>
               </Table>
             </div>
           </div>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Close</Button>
-            </DialogClose>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };
 

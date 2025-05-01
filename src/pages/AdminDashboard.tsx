@@ -22,7 +22,7 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <DashboardLayout>
+    <DashboardLayout title="Dance School Management">
       <TabNavigation 
         tabs={dashboardTabs} 
         defaultValue={activeTab} 

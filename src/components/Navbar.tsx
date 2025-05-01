@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link } from 'react-scroll';
+import { Link as ScrollLink } from 'react-scroll';
+import { Link as RouterLink } from 'react-router-dom';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -36,7 +38,7 @@ const Navbar = () => {
         </div>
         
         <div className="hidden md:flex space-x-8 items-center">
-          <Link 
+          <ScrollLink 
             to="intro" 
             spy={true} 
             smooth={true} 
@@ -45,8 +47,8 @@ const Navbar = () => {
             className="text-gray-800 hover:text-purple-600 cursor-pointer transition-colors"
           >
             Home
-          </Link>
-          <Link 
+          </ScrollLink>
+          <ScrollLink 
             to="batches" 
             spy={true} 
             smooth={true} 
@@ -55,8 +57,8 @@ const Navbar = () => {
             className="text-gray-800 hover:text-purple-600 cursor-pointer transition-colors"
           >
             Batches
-          </Link>
-          <Link 
+          </ScrollLink>
+          <ScrollLink 
             to="trainers" 
             spy={true} 
             smooth={true} 
@@ -65,8 +67,8 @@ const Navbar = () => {
             className="text-gray-800 hover:text-purple-600 cursor-pointer transition-colors"
           >
             Trainers
-          </Link>
-          <Link 
+          </ScrollLink>
+          <ScrollLink 
             to="register" 
             spy={true} 
             smooth={true} 
@@ -75,8 +77,8 @@ const Navbar = () => {
             className="text-gray-800 hover:text-purple-600 cursor-pointer transition-colors"
           >
             Register
-          </Link>
-          <Link 
+          </ScrollLink>
+          <ScrollLink 
             to="contact" 
             spy={true} 
             smooth={true} 
@@ -85,13 +87,13 @@ const Navbar = () => {
             className="text-gray-800 hover:text-purple-600 cursor-pointer transition-colors"
           >
             Contact
-          </Link>
+          </ScrollLink>
           <Button 
             variant="default" 
             className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white ml-4"
-            onClick={() => window.location.href = '/admin'}
+            asChild
           >
-            Login
+            <RouterLink to="/admin">Login</RouterLink>
           </Button>
         </div>
 

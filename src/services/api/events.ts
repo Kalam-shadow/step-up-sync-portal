@@ -1,6 +1,6 @@
 
 import { API_BASE_URL, handleResponse } from './base';
-import { Event, EventStaff } from '@/types';
+import { Event, EventStaff, EventFormData } from '@/types';
 
 // Get all events
 export const getEvents = async (): Promise<Event[]> => {
