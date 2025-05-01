@@ -54,3 +54,12 @@ export interface Payment {
   description: string;
   status: string; // "Paid", "Pending", "Failed"
 }
+
+// Additional types for form submissions
+export interface TrainerFormData {
+  name: string;
+  specialization: string;
+  contactInfo: string;
+  bio: string;
+  joiningDate: string;
+}

@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trainer } from "@/types";
+import { Trainer, TrainerFormData } from "@/types";
 import { getTrainers, registerTrainer, deleteEntity, updateTrainer } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,13 +34,13 @@ const TrainersPage = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<Trainer | null>(null);
 
-  const form = useForm({
+  const form = useForm<TrainerFormData>({
     defaultValues: {
       name: "",
       specialization: "",
       contactInfo: "",
       bio: "",
-      joiningDate: "", // Added joiningDate
+      joiningDate: "",
     },
   });
 
@@ -53,7 +54,7 @@ const TrainersPage = () => {
   };
 
   // Prefill form when editing
-  const handleEditTrainer = (trainer: any) => {
+  const handleEditTrainer = (trainer: Trainer) => {
     console.log("Editing Trainer:", trainer); // Debug log
 
     // Convert joiningDate to YYYY-MM-DD format if it's a Date object
@@ -83,7 +84,7 @@ const TrainersPage = () => {
 
   // Add/update trainer mutation
   const mutation = useMutation({
-    mutationFn: (data: Trainer) => {
+    mutationFn: (data: TrainerFormData) => {
       if (editingTrainer) {
         // Call updateTrainer if editingTrainer is set
         return updateTrainer(editingTrainer.id, {
