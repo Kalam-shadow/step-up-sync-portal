@@ -1,8 +1,22 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-scroll";
+import { useQuery } from "@tanstack/react-query";
+import { getEvents } from "@/services/api/events";
+import { CalendarDays, Megaphone } from "lucide-react";
 
 const IntroSection = () => {
+  // Fetch upcoming events
+  const { data: events = [] } = useQuery({
+    queryKey: ["events"],
+    queryFn: getEvents,
+  });
+
+  // Get the next upcoming event
+  const upcomingEvent = events.length > 0 
+    ? events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] 
+    : null;
+
   return (
     <section id="intro" className="pt-24 pb-16 md:pt-32 md:pb-24 bg-gradient-to-b from-white to-purple-50">
       <div className="container mx-auto px-4">
@@ -27,6 +41,26 @@ const IntroSection = () => {
                 </Button>
               </Link>
             </div>
+            
+            {upcomingEvent && (
+              <div className="mt-8 p-4 bg-white rounded-lg border border-purple-100 shadow-sm">
+                <div className="flex items-center gap-2 text-purple-600">
+                  <Megaphone size={20} />
+                  <h3 className="font-semibold">Upcoming Event</h3>
+                </div>
+                <h4 className="font-bold text-lg mt-2">{upcomingEvent.title}</h4>
+                <div className="flex items-center gap-2 text-gray-600 mt-1">
+                  <CalendarDays size={16} />
+                  <span>{new Date(upcomingEvent.date).toLocaleDateString()}</span>
+                </div>
+                <p className="mt-2 text-gray-700">{upcomingEvent.description.substring(0, 100)}...</p>
+                <div className="mt-3">
+                  <Button variant="link" className="text-purple-600 p-0 h-auto">
+                    Learn More
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="md:w-1/2">
             <div className="relative">
@@ -44,6 +78,12 @@ const IntroSection = () => {
                 <p className="font-bold text-pink-600">Expert Trainers</p>
                 <p className="text-gray-600">Personalized Attention</p>
               </div>
+              {events.length > 0 && (
+                <div className="absolute -bottom-5 -right-5 bg-gradient-to-r from-purple-600 to-pink-500 p-4 rounded-lg shadow-xl text-white">
+                  <p className="font-bold">Event Services</p>
+                  <p className="text-white/90">Performances & Shows</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

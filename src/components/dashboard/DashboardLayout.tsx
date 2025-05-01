@@ -27,10 +27,10 @@ const DashboardLayout = ({ children, title = "Step Up Dance Admin" }: DashboardL
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-gray-50">
         <AdminSidebar />
-        <SidebarInset>
+        <SidebarInset className="transition-all duration-300">
           <DashboardHeader title={title} onLogout={handleLogout} />
           <main className="container mx-auto py-8 px-4">
             {children}
