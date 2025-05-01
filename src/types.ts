@@ -27,6 +27,8 @@ export interface Batch {
   duration: number;
   level: string;
   fee: number;
+  trainerID: number;
+  trainerName: string;
 }
 
 export interface Attendance {

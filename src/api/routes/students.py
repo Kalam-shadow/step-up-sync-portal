@@ -92,7 +92,7 @@ def update_student(student_id):
             student_id
         )
         
-        print(f"Executing query: {query} with values: {values}")  # Debugging log
+        #print(f"Executing query: {query} with values: {values}")  # Debugging log
         
         cursor.execute(query, values)
         conn.commit()

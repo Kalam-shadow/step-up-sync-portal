@@ -46,22 +46,68 @@ export const getTrainers = async (): Promise<Trainer[]> => {
   }));
 };
 
-export const registerTrainer = async (trainerData: {
+export const registerTrainer = async (trainerData:{
   name: string;
-  expertise: string;
+  specialization: string;
   contact_info: string;
-}) => {
+  bio: string;
+  joining_Date: any;
+}): Promise<void> => {
+  const formattedJoiningDate =
+    trainerData.joining_Date instanceof Date
+      ? trainerData.joining_Date.toISOString().split("T")[0] // Convert to YYYY-MM-DD
+      : trainerData.joining_Date;
+
   const response = await fetch(`${API_BASE_URL}/trainers`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(trainerData),
-    credentials: 'include',
+    body: JSON.stringify({
+      name: trainerData.name,
+      specialization: trainerData.specialization,
+      joining_date: formattedJoiningDate, // Use the formatted date
+      contact_info: trainerData.contact_info,
+      bio: trainerData.bio,
+    }),
+    credentials: "include",
   });
-  return handleResponse(response);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.error || `Error: ${response.status}`;
+    throw new Error(errorMessage);
+  }
 };
 
+export const updateTrainer = async (trainerId: number, trainerData: {
+  name: string;
+  specialization: string;
+  contact_info: string;
+  bio: string;
+  joining_Date: string;
+}): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/trainers/${trainerId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: trainerData.name,
+      specialization: trainerData.specialization,
+      joining_date: trainerData.joining_Date, // Ensure the correct field name is used
+      contact_info: trainerData.contact_info,
+      bio: trainerData.bio,
+    }),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.error || `Error: ${response.status}`;
+    throw new Error(errorMessage);
+  }
+};
 // Batches
 export const getBatches = async (): Promise<Batch[]> => {
   try {
@@ -90,6 +136,8 @@ export const getBatches = async (): Promise<Batch[]> => {
       duration: batch.Duration || 60,
       level: batch.Level || "Beginner",
       fee: batch.Fee || 0,
+      trainerName: batch.TrainerName || "",
+      trainerID: batch.TrainerID || 0,
     }));
   } catch (error) {
     console.error("Error in getBatches:", error);
@@ -100,10 +148,36 @@ export const getBatches = async (): Promise<Batch[]> => {
 export const createBatch = async (batchData: {
   name: string;
   schedule: string;
-  trainer_id: number;
+  danceStyle: string;
+  ageGroup: string;
+  duration: number;
+  level: string;
+  fee: number;
+  trainerID: number;
 }) => {
   const response = await fetch(`${API_BASE_URL}/batches`, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(batchData),
+    credentials: 'include',
+  });
+  return handleResponse(response);
+};
+
+export const updateBatch = async (batchId: number, batchData: {
+  name: string;
+  schedule: string;
+  danceStyle: string;
+  ageGroup: string;
+  duration: number;
+  level: string;
+  fee: number;
+  trainerID: number;
+}) => {
+  const response = await fetch(`${API_BASE_URL}/batches/${batchId}`, {
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },

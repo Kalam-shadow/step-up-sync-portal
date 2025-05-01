@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Batch } from "@/types";
-import { getBatches, createBatch, deleteEntity } from "@/services/api";
+import { Batch, Trainer } from "@/types"; // Ensure Trainer type is defined
+import { getBatches, createBatch, deleteEntity, updateBatch, getTrainers } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -43,7 +42,18 @@ const BatchesPage = () => {
       duration: 60,
       level: "Beginner",
       fee: 0,
+      trainerID: 0, // Use trainerName instead of trainerId
     },
+  });
+
+  // Fetch trainers for the dropdown
+  const {
+    data: trainers = [],
+    isLoading: isTrainersLoading,
+    isError: isTrainersError,
+  } = useQuery({
+    queryKey: ["trainers"],
+    queryFn: getTrainers,
   });
 
   // Reset form when dialog closes
@@ -65,6 +75,7 @@ const BatchesPage = () => {
     form.setValue("duration", batch.duration);
     form.setValue("level", batch.level);
     form.setValue("fee", batch.fee);
+    form.setValue("trainerID", batch.trainerID); // Prefill trainerName
     setIsAddDialogOpen(true);
   };
 
@@ -81,12 +92,31 @@ const BatchesPage = () => {
   // Add/update batch mutation
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      const batchData = {
-        name: data.name,
-        schedule: data.schedule,
-        trainer_id: 1, // Default trainer ID - in a real app, this would be selected
-      };
-      return createBatch(batchData);
+      if (editingBatch) {
+        // Call updateBatch if editingBatch is set
+        return updateBatch(editingBatch.id, {
+          name: data.name,
+          danceStyle: data.danceStyle,
+          ageGroup: data.ageGroup,
+          schedule: data.schedule,
+          duration: data.duration,
+          level: data.level,
+          fee: data.fee,
+          trainerID: data.trainerID, // Use trainerName
+        });
+      } else {
+        // Call createBatch if adding a new batch
+        return createBatch({
+          name: data.name,
+          danceStyle: data.danceStyle,
+          ageGroup: data.ageGroup, 
+          schedule: data.schedule,
+          duration: data.duration,
+          level: data.level,
+          fee: data.fee,
+          trainerID: data.trainerID, // Use trainerName
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["batches"] });
@@ -130,8 +160,10 @@ const BatchesPage = () => {
     mutation.mutate(data);
   });
 
-  if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
-  if (isError) return <div className="p-8 text-red-500">Error loading batches!</div>;
+  if (isLoading || isTrainersLoading)
+    return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
+  if (isError || isTrainersError)
+    return <div className="p-8 text-red-500">Error loading data!</div>;
 
   return (
     <div className="space-y-6 p-6">
@@ -238,6 +270,7 @@ const BatchesPage = () => {
                     )}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="level"
@@ -257,6 +290,29 @@ const BatchesPage = () => {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="trainerID"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Trainer</FormLabel>
+                      <FormControl>
+                        <select 
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          {...field}
+                        >
+                          <option value="">Select Trainer</option>
+                          {trainers.map((trainer: Trainer) => (
+                            <option key={trainer.id} value={trainer.id}>
+                              {trainer.name}
+                            </option>
+                          ))}
+                        </select>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                </div>
                 <DialogFooter>
                   <Button type="submit" disabled={mutation.isPending}>
                     {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -279,13 +335,14 @@ const BatchesPage = () => {
               <TableHead>Schedule</TableHead>
               <TableHead>Level</TableHead>
               <TableHead>Fee ($)</TableHead>
+              <TableHead>Trainer</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {batches.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">No batches found</TableCell>
+                <TableCell colSpan={8} className="text-center">No batches found</TableCell>
               </TableRow>
             ) : (
               batches.map((batch) => (
@@ -296,6 +353,7 @@ const BatchesPage = () => {
                   <TableCell>{batch.schedule}</TableCell>
                   <TableCell>{batch.level}</TableCell>
                   <TableCell>${batch.fee}</TableCell>
+                  <TableCell>{batch.trainerName || "None"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button 

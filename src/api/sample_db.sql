@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS Batches (
     Schedule VARCHAR(255),
     Duration INT,  -- in minutes
     Level VARCHAR(50),
-    Fee DECIMAL(10, 2)
+    Fee DECIMAL(10, 2),
+    TrainerID INT,  -- Optional, can be used for quick reference
+    FOREIGN KEY (TrainerID) REFERENCES Trainers(TrainerID)  -- Optional, can be used for quick reference
 );
 
 -- Create Trainers table

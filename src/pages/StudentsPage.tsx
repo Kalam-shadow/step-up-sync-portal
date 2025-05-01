@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Student } from "@/types";
-import { getStudents, registerStudent, deleteEntity } from "@/services/api";
+import { getStudents, registerStudent, deleteEntity, updateStudent } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -80,13 +80,25 @@ const StudentsPage = () => {
   // Add/update student mutation
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      return registerStudent({
-        name: data.name,
-        age: Number(data.age),
-        contactInfo: data.contactInfo,
-        emergencyContact: data.emergencyContact,
-        batch_id: Number(data.batchId)
-      });
+      if (editingStudent) {
+        // Call updateStudent if editingStudent is set
+        return updateStudent(editingStudent.id, {
+          name: data.name,
+          age: Number(data.age),
+          contact_info: data.contactInfo,
+          emergency_contact: data.emergencyContact,
+          batch_id: Number(data.batchId),
+        });
+      } else {
+        // Call registerStudent if adding a new student
+        return registerStudent({
+          name: data.name,
+          age: Number(data.age),
+          contact_info: data.contactInfo,
+          emergency_contact: data.emergencyContact,
+          batch_id: Number(data.batchId),
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
@@ -208,7 +220,7 @@ const StudentsPage = () => {
                     <FormItem>
                       <FormLabel>Batch</FormLabel>
                       <FormControl>
-                        <select 
+                        <select
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                           value={field.value}
                           onChange={(e) => field.onChange(Number(e.target.value))}
@@ -262,16 +274,16 @@ const StudentsPage = () => {
                   <TableCell>{student.joiningDate}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="icon"
                         onClick={() => handleEditStudent(student)}
                       >
                         <Edit size={16} />
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="text-red-500"
                         onClick={() => deleteMutation.mutate(student.id)}
                       >

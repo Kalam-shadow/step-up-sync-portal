@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trainer } from "@/types";
-import { getTrainers, registerTrainer, deleteEntity } from "@/services/api";
+import { getTrainers, registerTrainer, deleteEntity, updateTrainer } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -40,6 +39,7 @@ const TrainersPage = () => {
       specialization: "",
       contactInfo: "",
       bio: "",
+      joiningDate: "", // Added joiningDate
     },
   });
 
@@ -53,12 +53,21 @@ const TrainersPage = () => {
   };
 
   // Prefill form when editing
-  const handleEditTrainer = (trainer: Trainer) => {
+  const handleEditTrainer = (trainer: any) => {
+    console.log("Editing Trainer:", trainer); // Debug log
+
+    // Convert joiningDate to YYYY-MM-DD format if it's a Date object
+    const formattedJoiningDate =
+      trainer.joiningDate instanceof Date
+        ? trainer.joiningDate.toISOString().split("T")[0] // Extract only the date portion
+        : trainer.joiningDate;
+
     setEditingTrainer(trainer);
     form.setValue("name", trainer.name);
     form.setValue("specialization", trainer.specialization);
     form.setValue("contactInfo", trainer.contactInfo);
     form.setValue("bio", trainer.bio);
+    form.setValue("joiningDate", formattedJoiningDate || ""); // Use formatted date or empty string
     setIsAddDialogOpen(true);
   };
 
@@ -74,12 +83,26 @@ const TrainersPage = () => {
 
   // Add/update trainer mutation
   const mutation = useMutation({
-    mutationFn: (data: any) => {
-      return registerTrainer({
-        name: data.name,
-        expertise: data.specialization,
-        contact_info: data.contactInfo,
-      });
+    mutationFn: (data: Trainer) => {
+      if (editingTrainer) {
+        // Call updateTrainer if editingTrainer is set
+        return updateTrainer(editingTrainer.id, {
+          name: data.name,
+          specialization: data.specialization,
+          joining_Date: data.joiningDate, // Include joiningDate
+          contact_info: data.contactInfo,
+          bio: data.bio,
+        });
+      } else {
+        // Call registerTrainer if adding a new trainer
+        return registerTrainer({
+          name: data.name,
+          specialization: data.specialization,
+          joining_Date: data.joiningDate, // Include joiningDate
+          contact_info: data.contactInfo,
+          bio: data.bio,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trainers"] });
@@ -166,6 +189,18 @@ const TrainersPage = () => {
                       <FormLabel>Specialization</FormLabel>
                       <FormControl>
                         <Input placeholder="Ballet, Hip Hop, etc." {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="joiningDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Joining Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
                       </FormControl>
                     </FormItem>
                   )}
