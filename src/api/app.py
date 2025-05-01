@@ -6,7 +6,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'step_up_dance_secret_key')
 
 # Enable CORS for all routes
-CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://localhost:8080"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://localhost:8080","https://lovable.dev/projects/ca493007-1b17-4bf9-8c73-94808cd9d23e"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # Register blueprints
 from routes.auth import auth_bp
