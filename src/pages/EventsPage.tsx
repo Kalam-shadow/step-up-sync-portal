@@ -38,8 +38,8 @@ const EventsPage = () => {
   
   // Initialize form state
   const emptyFormData: EventFormData = {
-    name: "",
-    date: "",
+    eventname: "",
+    eventdate: "",
     location: "",
     description: "",
     clientName: "",

@@ -46,8 +46,8 @@ export const createEvent = async (eventData: EventFormData): Promise<Event> => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      event_name: eventData.name,
-      event_date: eventData.date,
+      event_name: eventData.eventname,
+      event_date: eventData.eventdate,
       location: eventData.location,
       description: eventData.description,
       client_name: eventData.clientName,
