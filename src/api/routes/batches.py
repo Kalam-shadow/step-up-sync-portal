@@ -32,7 +32,7 @@ def get_batches():
         """
         cursor.execute(query)
         batches = cursor.fetchall()
-        print(batches)  # Debugging line to check the fetched data
+        #rint(batches)  # Debugging line to check the fetched data
         cursor.close()
         conn.close()
         return jsonify(batches)

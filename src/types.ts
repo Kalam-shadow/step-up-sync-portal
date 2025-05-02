@@ -88,8 +88,8 @@ export interface EventStaff {
 }
 
 export interface EventFormData {
-  name: string;
-  date: string;
+  eventname: string;
+  eventdate: string;
   location: string;
   description: string;
   clientName: string;

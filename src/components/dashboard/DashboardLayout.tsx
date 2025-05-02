@@ -1,4 +1,3 @@
-
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -29,13 +28,19 @@ const DashboardLayout = ({ children, title = "Step Up Dance Admin" }: DashboardL
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-gray-50">
+        {/* Sidebar */}
         <AdminSidebar />
-        <SidebarInset className="transition-all duration-300">
+
+        {/* Main Content */}
+        <div className="flex-grow flex flex-col">
+          {/* Dashboard Header */}
           <DashboardHeader title={title} onLogout={handleLogout} />
-          <main className="container mx-auto py-8 px-4">
+
+          {/* Main Content Area */}
+          <main className="flex-grow py-8 px-4">
             {children}
           </main>
-        </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

@@ -408,7 +408,7 @@ const EventsPage = () => {
                 <Input
                   id="name"
                   name="name"
-                  value={formData.name}
+                  value={formData.eventname}
                   onChange={handleInputChange}
                   required
                 />
@@ -420,7 +420,7 @@ const EventsPage = () => {
                   id="date"
                   name="date"
                   type="date"
-                  value={formData.date}
+                  value={formData.eventdate}
                   onChange={handleInputChange}
                   required
                 />
